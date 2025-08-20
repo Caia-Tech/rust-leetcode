@@ -1,0 +1,39 @@
+[package]
+name = "rust-leetcode"
+version = "0.1.0"
+edition = "2021"
+authors = ["Rust LeetCode Contributors"]
+description = "Comprehensive LeetCode solutions in Rust with multiple approaches, benchmarking, and property-based testing"
+license = "MIT"
+repository = "https://github.com/yourusername/rust-leetcode"
+readme = "README.md"
+homepage = "https://github.com/yourusername/rust-leetcode"
+documentation = "https://docs.rs/rust-leetcode"
+keywords = ["leetcode", "algorithms", "data-structures", "rust"]
+categories = ["algorithms", "data-structures"]
+
+[dependencies]
+
+[dev-dependencies]
+# Testing framework enhancements
+criterion = "0.5"  # For benchmarking
+proptest = "1.0"   # Property-based testing
+rstest = "0.18"    # Parameterized testing
+
+[[bench]]
+name = "solutions"
+harness = false
+
+[lib]
+name = "rust_leetcode"
+path = "src/lib.rs"
+
+# Enable all lints for clean code
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
