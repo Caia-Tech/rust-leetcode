@@ -2,6 +2,8 @@
 //!
 //! A comprehensive collection of optimal LeetCode solutions implemented in Rust.
 //! Each solution includes detailed explanations, complexity analysis, and comprehensive tests.
+//!
+//! Created by Marvin Tutt, Caia Tech
 
 /// Easy difficulty problems (1-300 range typically)
 pub mod easy;

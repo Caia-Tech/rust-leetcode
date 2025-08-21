@@ -2,7 +2,7 @@
 name = "rust-leetcode"
 version = "0.1.0"
 edition = "2021"
-authors = ["Rust LeetCode Contributors"]
+authors = ["Marvin Tutt <marvin@caiatech.com>"]
 description = "Comprehensive LeetCode solutions in Rust with multiple approaches, benchmarking, and property-based testing"
 license = "MIT"
 repository = "https://github.com/yourusername/rust-leetcode"
@@ -13,6 +13,7 @@ keywords = ["leetcode", "algorithms", "data-structures", "rust"]
 categories = ["algorithms", "data-structures"]
 
 [dependencies]
+rand = "0.8"
 
 [dev-dependencies]
 # Testing framework enhancements
