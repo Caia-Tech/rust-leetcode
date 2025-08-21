@@ -1,311 +1,332 @@
 //! # Problem 21: Merge Two Sorted Lists
 //!
 //! You are given the heads of two sorted linked lists `list1` and `list2`.
-//! Merge the two lists into one sorted list. The list should be made by splicing 
-//! together the nodes of the first two lists.
+//!
+//! Merge the two lists in a one sorted list. The list should be made by splicing together 
+//! the nodes of the first two lists.
 //!
 //! Return the head of the merged linked list.
 //!
 //! ## Examples
 //!
+//! ```text
+//! Input: list1 = [1,2,4], list2 = [1,3,4]
+//! Output: [1,1,2,3,4,4]
 //! ```
-//! use rust_leetcode::easy::merge_two_sorted_lists::Solution;
-//! use rust_leetcode::utils::ListNode;
-//! 
-//! let solution = Solution::new();
-//! 
-//! // Example 1: [1,2,4] and [1,3,4] -> [1,1,2,3,4,4]
-//! let list1 = ListNode::from_vec(vec![1, 2, 4]);
-//! let list2 = ListNode::from_vec(vec![1, 3, 4]);
-//! let result = solution.merge_two_lists(list1, list2);
-//! assert_eq!(ListNode::to_vec(result), vec![1, 1, 2, 3, 4, 4]);
+//!
+//! ```text
+//! Input: list1 = [], list2 = []
+//! Output: []
+//! ```
+//!
+//! ```text
+//! Input: list1 = [], list2 = [0]
+//! Output: [0]
 //! ```
 //!
 //! ## Constraints
 //!
-//! - The number of nodes in both lists is in the range [0, 50].
-//! - -100 <= Node.val <= 100
-//! - Both list1 and list2 are sorted in non-decreasing order.
+//! * The number of nodes in both lists is in the range [0, 50]
+//! * -100 <= Node.val <= 100
+//! * Both list1 and list2 are sorted in non-decreasing order
 
-use crate::utils::ListNode;
+use crate::utils::data_structures::ListNode;
 
-/// Solution struct following LeetCode format
+/// Solution for Merge Two Sorted Lists problem
 pub struct Solution;
 
 impl Solution {
+    /// Creates a new instance of Solution
     pub fn new() -> Self {
         Solution
     }
 
-    /// # Approach 1: Iterative with Dummy Head (Optimal)
+    /// # Approach 1: Iterative Merge with Dummy Head (Optimal)
     /// 
     /// **Algorithm:**
-    /// 1. Create a dummy head to simplify edge case handling
-    /// 2. Use current pointer to track end of merged list
-    /// 3. Compare current nodes from both lists
-    /// 4. Attach smaller node and advance corresponding pointer
-    /// 5. Attach remaining nodes from non-empty list
+    /// 1. Create dummy head node to simplify edge cases
+    /// 2. Use current pointer to track tail of merged list
+    /// 3. Compare values and link smaller node to result
+    /// 4. Advance pointer in the list whose node was added
+    /// 5. Append remaining nodes from non-empty list
     /// 
-    /// **Time Complexity:** O(m + n) where m, n are lengths of the lists
-    /// **Space Complexity:** O(1) - Only using constant extra space
+    /// **Time Complexity:** O(m + n) where m, n are lengths of input lists
+    /// **Space Complexity:** O(1) - Only uses constant extra space
     /// 
-    /// **Key Insight:** The dummy head eliminates special case handling for 
-    /// the first node, making the code cleaner and less error-prone.
+    /// **Key Insights:**
+    /// - Dummy head eliminates special handling of first node
+    /// - Two-pointer technique processes both lists simultaneously
+    /// - No additional storage needed - reuses existing nodes
     /// 
-    /// **Why this is optimal:**
-    /// - Must examine every node in both lists → O(m + n) time minimum
-    /// - Only rearranges existing nodes → O(1) space (excluding result)
-    /// - No recursion overhead
-    /// - Single pass through both lists
-    pub fn merge_two_lists(
-        &self,
-        list1: Option<Box<ListNode>>,
-        list2: Option<Box<ListNode>>,
-    ) -> Option<Box<ListNode>> {
-        // Create dummy head to simplify logic
+    /// **Why this works:**
+    /// - Both input lists are already sorted
+    /// - Always choosing smaller value maintains sorted order
+    /// - Splicing preserves all original nodes
+    /// 
+    /// **Step-by-step for [1,2,4] and [1,3,4]:**
+    /// ```text
+    /// Initial: dummy -> None, current = dummy
+    /// Step 1: Compare 1 vs 1, choose first 1: dummy -> 1
+    /// Step 2: Compare 2 vs 1, choose 1: dummy -> 1 -> 1  
+    /// Step 3: Compare 2 vs 3, choose 2: dummy -> 1 -> 1 -> 2
+    /// Step 4: Compare 4 vs 3, choose 3: dummy -> 1 -> 1 -> 2 -> 3
+    /// Step 5: Compare 4 vs 4, choose first 4: dummy -> 1 -> 1 -> 2 -> 3 -> 4
+    /// Step 6: Append remaining [4]: dummy -> 1 -> 1 -> 2 -> 3 -> 4 -> 4
+    /// ```
+    pub fn merge_two_lists(&self, list1: Option<Box<ListNode>>, list2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
         let mut dummy = Box::new(ListNode::new(0));
         let mut current = &mut dummy;
-        
         let mut l1 = list1;
         let mut l2 = list2;
         
-        // Merge while both lists have nodes
         while l1.is_some() && l2.is_some() {
-            // Compare current values
             if l1.as_ref().unwrap().val <= l2.as_ref().unwrap().val {
-                // Take from l1
-                let next_l1 = l1.as_mut().unwrap().next.take();
+                let next = l1.as_mut().unwrap().next.take();
                 current.next = l1;
-                l1 = next_l1;
+                l1 = next;
             } else {
-                // Take from l2
-                let next_l2 = l2.as_mut().unwrap().next.take();
+                let next = l2.as_mut().unwrap().next.take();
                 current.next = l2;
-                l2 = next_l2;
+                l2 = next;
             }
             current = current.next.as_mut().unwrap();
         }
         
-        // Attach remaining nodes (at most one list is non-empty)
+        // Append remaining nodes
         current.next = l1.or(l2);
         
         dummy.next
     }
 
-    /// # Approach 2: Recursive (Elegant but uses call stack)
+    /// # Approach 2: Recursive Merge
     /// 
     /// **Algorithm:**
     /// 1. Base cases: if one list is empty, return the other
-    /// 2. Compare current heads
-    /// 3. Choose smaller head and recursively merge with remainder
-    /// 4. Return the chosen head with merged remainder as next
+    /// 2. Compare heads of both lists
+    /// 3. Choose smaller head and recursively merge rest
+    /// 4. Link chosen head to result of recursive merge
     /// 
-    /// **Time Complexity:** O(m + n) - Each node processed once
-    /// **Space Complexity:** O(m + n) - Recursion depth proportional to total nodes
+    /// **Time Complexity:** O(m + n) where m, n are lengths of input lists
+    /// **Space Complexity:** O(m + n) - Recursion stack depth
     /// 
-    /// **Trade-offs:**
-    /// - **Pros:** More elegant, mathematically cleaner
-    /// - **Cons:** Uses call stack space, potential stack overflow for large lists
-    /// - **Performance:** Function call overhead vs iterative approach
+    /// **Advantages:**
+    /// - Clean, elegant solution
+    /// - Natural recursive structure matches problem
+    /// - Easy to understand and implement
     /// 
-    /// **When to use:** When elegance > performance and lists are reasonably small
-    pub fn merge_two_lists_recursive(
-        &self,
-        list1: Option<Box<ListNode>>,
-        list2: Option<Box<ListNode>>,
-    ) -> Option<Box<ListNode>> {
+    /// **Disadvantages:**
+    /// - Uses recursion stack space
+    /// - May cause stack overflow for very long lists
+    /// 
+    /// **When to use:** For moderate-sized lists where clarity is preferred
+    pub fn merge_two_lists_recursive(&self, list1: Option<Box<ListNode>>, list2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
         match (list1, list2) {
             (None, None) => None,
             (Some(l1), None) => Some(l1),
             (None, Some(l2)) => Some(l2),
             (Some(mut l1), Some(mut l2)) => {
                 if l1.val <= l2.val {
-                    l1.next = self.merge_two_lists_recursive(l1.next, Some(l2));
+                    l1.next = self.merge_two_lists_recursive(l1.next.take(), Some(l2));
                     Some(l1)
                 } else {
-                    l2.next = self.merge_two_lists_recursive(Some(l1), l2.next);
+                    l2.next = self.merge_two_lists_recursive(Some(l1), l2.next.take());
                     Some(l2)
                 }
             }
         }
     }
 
-    /// # Approach 3: In-Place with Pointer Manipulation (Most Memory Efficient)
+    /// # Approach 3: Vector Collection and Rebuild
     /// 
     /// **Algorithm:**
-    /// 1. Handle empty list edge cases upfront
-    /// 2. Ensure list1 starts with smaller or equal value
-    /// 3. Iterate through list1, inserting nodes from list2 where appropriate
-    /// 4. Handle case where list2 has remaining nodes
+    /// 1. Collect all values from both lists into vector
+    /// 2. Sort the combined vector
+    /// 3. Build new linked list from sorted values
     /// 
-    /// **Time Complexity:** O(m + n) - Each node examined once
-    /// **Space Complexity:** O(1) - True constant space, no dummy node
+    /// **Time Complexity:** O(n log n) where n = total number of nodes
+    /// **Space Complexity:** O(n) - Vector storage plus new list
     /// 
-    /// **Why more complex:**
-    /// - No dummy head makes edge cases trickier
-    /// - Must carefully track previous node for insertions
-    /// - More branching logic required
+    /// **Disadvantages:**
+    /// - Doesn't leverage pre-sorted nature of input
+    /// - Uses more time and space than necessary
+    /// - Creates entirely new nodes instead of reusing
     /// 
-    /// **Trade-off analysis:**
-    /// - **Memory:** Saves one ListNode allocation vs dummy head approach
-    /// - **Complexity:** More complex code, higher chance of bugs
-    /// - **Performance:** Marginally faster (no dummy node creation)
-    /// 
-    /// **Verdict:** Usually not worth the complexity for marginal gains
-    pub fn merge_two_lists_in_place(
-        &self,
-        list1: Option<Box<ListNode>>,
-        list2: Option<Box<ListNode>>,
-    ) -> Option<Box<ListNode>> {
-        if list1.is_none() {
-            return list2;
-        }
-        if list2.is_none() {
-            return list1;
-        }
+    /// **Educational value:** Shows alternative approach but not optimal
+    pub fn merge_two_lists_vector(&self, list1: Option<Box<ListNode>>, list2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+        let mut values = Vec::new();
         
-        let mut l1 = list1;
-        let mut l2 = list2;
-        
-        // Ensure l1 starts with smaller value for consistency
-        if l1.as_ref().unwrap().val > l2.as_ref().unwrap().val {
-            std::mem::swap(&mut l1, &mut l2);
-        }
-        
-        let mut current = l1.as_mut().unwrap();
-        
-        // Traverse l1 and insert l2 nodes where appropriate
-        while l2.is_some() {
-            if current.next.is_none() || 
-               current.next.as_ref().unwrap().val >= l2.as_ref().unwrap().val {
-                // Insert l2 node here
-                let next_l2 = l2.as_mut().unwrap().next.take();
-                let old_next = current.next.take();
-                current.next = l2;
-                current.next.as_mut().unwrap().next = old_next;
-                l2 = next_l2;
-            }
-            current = current.next.as_mut().unwrap();
-        }
-        
-        l1
-    }
-
-    /// # Approach 4: Vector-Based (ANTI-PATTERN - Educational)
-    /// 
-    /// **Algorithm:**
-    /// 1. Convert both linked lists to vectors
-    /// 2. Merge vectors using two-pointer technique
-    /// 3. Convert merged vector back to linked list
-    /// 
-    /// **Time Complexity:** O(m + n) - Same as optimal approaches
-    /// **Space Complexity:** O(m + n) - Additional vector storage
-    /// 
-    /// **Why this is an anti-pattern:**
-    /// - **Defeats the purpose:** Problem is about linked list manipulation
-    /// - **Extra memory:** Unnecessary vector allocations
-    /// - **Extra work:** Three phases instead of one
-    /// - **Loss of structure:** Loses the linked nature of the data
-    /// 
-    /// **When you might see this:**
-    /// - Novice programmers avoiding pointer manipulation
-    /// - Quick prototyping (but shouldn't make it to production)
-    /// - When interviewer asks "what if you can't use the linked list structure?"
-    /// 
-    /// **Educational value:** Shows why understanding data structures matters
-    pub fn merge_two_lists_vector_antipattern(
-        &self,
-        list1: Option<Box<ListNode>>,
-        list2: Option<Box<ListNode>>,
-    ) -> Option<Box<ListNode>> {
-        // Convert to vectors (wasteful but educational)
-        let vec1 = ListNode::to_vec(list1);
-        let vec2 = ListNode::to_vec(list2);
-        
-        // Merge vectors using two-pointer technique
-        let mut merged = Vec::new();
-        let mut i = 0;
-        let mut j = 0;
-        
-        while i < vec1.len() && j < vec2.len() {
-            if vec1[i] <= vec2[j] {
-                merged.push(vec1[i]);
-                i += 1;
-            } else {
-                merged.push(vec2[j]);
-                j += 1;
-            }
-        }
-        
-        // Add remaining elements
-        while i < vec1.len() {
-            merged.push(vec1[i]);
-            i += 1;
-        }
-        while j < vec2.len() {
-            merged.push(vec2[j]);
-            j += 1;
-        }
-        
-        // Convert back to linked list (more waste)
-        ListNode::from_vec(merged)
-    }
-
-    /// # Approach 5: Priority Queue / Heap Based (OVERKILL)
-    /// 
-    /// **Algorithm:**
-    /// 1. Add all nodes from both lists to a min-heap
-    /// 2. Extract nodes in sorted order to build result
-    /// 
-    /// **Time Complexity:** O((m + n) * log(m + n)) - Heap operations
-    /// **Space Complexity:** O(m + n) - Heap storage
-    /// 
-    /// **Why this is overkill:**
-    /// - **Worse time complexity:** O(n log n) vs O(n) for optimal
-    /// - **Worse space complexity:** O(n) vs O(1) for optimal  
-    /// - **Unnecessary:** Lists are already sorted!
-    /// - **Complex:** Much more code for worse performance
-    /// 
-    /// **When it might be useful:**
-    /// - Merging K sorted lists (where K > 2)
-    /// - When you need to merge many lists dynamically
-    /// - As a general "merge multiple sorted sequences" solution
-    /// 
-    /// **Educational insight:** Shows why algorithmic choice depends on problem constraints
-    pub fn merge_two_lists_heap_overkill(
-        &self,
-        list1: Option<Box<ListNode>>,
-        list2: Option<Box<ListNode>>,
-    ) -> Option<Box<ListNode>> {
-        use std::collections::BinaryHeap;
-        use std::cmp::Reverse;
-        
-        // BinaryHeap is max-heap, so use Reverse for min-heap behavior
-        let mut heap: BinaryHeap<Reverse<i32>> = BinaryHeap::new();
-        
-        // Add all values to heap (destroying list structure)
+        // Collect values from first list
         let mut current = list1;
         while let Some(node) = current {
-            heap.push(Reverse(node.val));
+            values.push(node.val);
             current = node.next;
         }
         
-        current = list2;
+        // Collect values from second list
+        let mut current = list2;
         while let Some(node) = current {
-            heap.push(Reverse(node.val));
+            values.push(node.val);
             current = node.next;
         }
         
-        // Build result from sorted heap
-        let mut dummy = Box::new(ListNode::new(0));
-        let mut current = &mut dummy;
+        // Sort all values
+        values.sort_unstable();
         
-        while let Some(Reverse(val)) = heap.pop() {
-            current.next = Some(Box::new(ListNode::new(val)));
-            current = current.next.as_mut().unwrap();
+        // Build new linked list from sorted values
+        let mut head = None;
+        for &val in values.iter().rev() {
+            let mut new_node = Box::new(ListNode::new(val));
+            new_node.next = head;
+            head = Some(new_node);
         }
         
-        dummy.next
+        head
+    }
+
+    /// # Approach 4: In-place Merge with List1 as Base
+    /// 
+    /// **Algorithm:**
+    /// 1. Use list1 as the base list to merge into
+    /// 2. Track previous and current nodes in list1
+    /// 3. Insert nodes from list2 at appropriate positions
+    /// 4. Handle remaining nodes from list2
+    /// 
+    /// **Time Complexity:** O(m + n) where m, n are lengths of input lists
+    /// **Space Complexity:** O(1) - Only uses constant extra space
+    /// 
+    /// **Characteristics:**
+    /// - Modifies list1 structure to accommodate list2 nodes
+    /// - Preserves original nodes from both lists
+    /// - Slightly more complex pointer manipulation
+    /// 
+    /// **When useful:** When you want to preserve the first list structure
+    pub fn merge_two_lists_in_place(&self, list1: Option<Box<ListNode>>, list2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+        if list1.is_none() { return list2; }
+        if list2.is_none() { return list1; }
+        
+        let mut result = list1;
+        let mut l2 = list2;
+        
+        // Ensure result starts with the smaller value
+        if result.as_ref().unwrap().val > l2.as_ref().unwrap().val {
+            std::mem::swap(&mut result, &mut l2);
+        }
+        
+        let mut current = result.as_mut().unwrap();
+        
+        while let Some(mut l2_node) = l2 {
+            // Find position to insert l2_node
+            while current.next.is_some() && current.next.as_ref().unwrap().val <= l2_node.val {
+                current = current.next.as_mut().unwrap();
+            }
+            
+            // Insert l2_node after current
+            let next_l2 = l2_node.next.take();
+            l2_node.next = current.next.take();
+            current.next = Some(l2_node);
+            
+            current = current.next.as_mut().unwrap();
+            l2 = next_l2;
+        }
+        
+        result
+    }
+
+    /// # Approach 5: Priority Queue Simulation
+    /// 
+    /// **Algorithm:**
+    /// 1. Simulate merge using priority queue concept
+    /// 2. Compare current heads and always choose smaller
+    /// 3. Build result list by linking chosen nodes
+    /// 4. Handle edge cases with empty lists
+    /// 
+    /// **Time Complexity:** O(m + n) where m, n are lengths of input lists
+    /// **Space Complexity:** O(1) - Only uses constant extra space
+    /// 
+    /// **Note:** This is conceptually similar to approach 1 but with different
+    /// implementation style that mimics priority queue behavior
+    /// 
+    /// **Educational value:** Shows connection to merge step in merge sort
+    pub fn merge_two_lists_priority_queue(&self, list1: Option<Box<ListNode>>, list2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+        let mut heads = [list1, list2];
+        let mut result = None;
+        let mut tail = &mut result;
+        
+        while heads[0].is_some() || heads[1].is_some() {
+            let choice = match (&heads[0], &heads[1]) {
+                (Some(l1), Some(l2)) => if l1.val <= l2.val { 0 } else { 1 },
+                (Some(_), None) => 0,
+                (None, Some(_)) => 1,
+                (None, None) => break,
+            };
+            
+            if let Some(mut node) = heads[choice].take() {
+                heads[choice] = node.next.take();
+                *tail = Some(node);
+                tail = &mut tail.as_mut().unwrap().next;
+            }
+        }
+        
+        result
+    }
+
+    /// # Approach 6: Stack-Based Merge
+    /// 
+    /// **Algorithm:**
+    /// 1. Use two stacks to hold nodes in reverse order
+    /// 2. Pop from stacks and merge in correct order
+    /// 3. Build result list from smallest to largest
+    /// 
+    /// **Time Complexity:** O(m + n) where m, n are lengths of input lists
+    /// **Space Complexity:** O(m + n) - Stack storage
+    /// 
+    /// **Note:** This approach is mainly educational and not practical
+    /// for this problem since the input is already sorted
+    /// 
+    /// **Educational value:** Shows how different data structures
+    /// can be applied to the same problem
+    pub fn merge_two_lists_stack(&self, list1: Option<Box<ListNode>>, list2: Option<Box<ListNode>>) -> Option<Box<ListNode>> {
+        let mut stack1 = Vec::new();
+        let mut stack2 = Vec::new();
+        
+        // Push all nodes to stacks (reversing order)
+        let mut current = list1;
+        while let Some(node) = current {
+            let next = node.next.clone();
+            stack1.push(node.val);
+            current = next;
+        }
+        
+        let mut current = list2;
+        while let Some(node) = current {
+            let next = node.next.clone();
+            stack2.push(node.val);
+            current = next;
+        }
+        
+        // Merge by comparing stack tops (which are largest values)
+        let mut result = None;
+        
+        while !stack1.is_empty() || !stack2.is_empty() {
+            let val = match (stack1.last(), stack2.last()) {
+                (Some(&v1), Some(&v2)) => {
+                    if v1 >= v2 {
+                        stack1.pop().unwrap()
+                    } else {
+                        stack2.pop().unwrap()
+                    }
+                },
+                (Some(_), None) => stack1.pop().unwrap(),
+                (None, Some(_)) => stack2.pop().unwrap(),
+                (None, None) => break,
+            };
+            
+            let mut new_node = Box::new(ListNode::new(val));
+            new_node.next = result;
+            result = Some(new_node);
+        }
+        
+        result
     }
 }
 
@@ -318,266 +339,281 @@ impl Default for Solution {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::rstest;
 
     fn setup() -> Solution {
         Solution::new()
     }
 
-    #[rstest]
-    #[case(vec![1, 2, 4], vec![1, 3, 4], vec![1, 1, 2, 3, 4, 4])]
-    #[case(vec![], vec![], vec![])]
-    #[case(vec![], vec![0], vec![0])]
-    #[case(vec![1], vec![], vec![1])]
-    #[case(vec![2], vec![1], vec![1, 2])]
-    fn test_basic_cases(
-        #[case] list1_vals: Vec<i32>,
-        #[case] list2_vals: Vec<i32>,
-        #[case] expected: Vec<i32>,
-    ) {
+    fn vec_to_list(values: Vec<i32>) -> Option<Box<ListNode>> {
+        let mut head = None;
+        for &val in values.iter().rev() {
+            let mut new_node = Box::new(ListNode::new(val));
+            new_node.next = head;
+            head = Some(new_node);
+        }
+        head
+    }
+
+    fn list_to_vec(mut head: Option<Box<ListNode>>) -> Vec<i32> {
+        let mut result = Vec::new();
+        while let Some(node) = head {
+            result.push(node.val);
+            head = node.next;
+        }
+        result
+    }
+
+    #[test]
+    fn test_basic_examples() {
         let solution = setup();
-        let list1 = ListNode::from_vec(list1_vals);
-        let list2 = ListNode::from_vec(list2_vals);
+        
+        // Example 1: [1,2,4] + [1,3,4] = [1,1,2,3,4,4]
+        let list1 = vec_to_list(vec![1, 2, 4]);
+        let list2 = vec_to_list(vec![1, 3, 4]);
         let result = solution.merge_two_lists(list1, list2);
-        assert_eq!(ListNode::to_vec(result), expected);
+        assert_eq!(list_to_vec(result), vec![1, 1, 2, 3, 4, 4]);
+        
+        // Example 2: [] + [] = []
+        let result = solution.merge_two_lists(None, None);
+        assert_eq!(list_to_vec(result), Vec::<i32>::new());
+        
+        // Example 3: [] + [0] = [0]
+        let list2 = vec_to_list(vec![0]);
+        let result = solution.merge_two_lists(None, list2);
+        assert_eq!(list_to_vec(result), vec![0]);
     }
 
     #[test]
-    fn test_empty_lists() {
+    fn test_edge_cases() {
         let solution = setup();
         
-        // Both empty
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(None, None)),
-            Vec::<i32>::new()
-        );
+        // One empty list
+        let list1 = vec_to_list(vec![1, 2, 3]);
+        let result = solution.merge_two_lists(list1, None);
+        assert_eq!(list_to_vec(result), vec![1, 2, 3]);
         
-        // One empty
-        let list1 = ListNode::from_vec(vec![1, 2, 3]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, None)),
-            vec![1, 2, 3]
-        );
+        let list2 = vec_to_list(vec![4, 5, 6]);
+        let result = solution.merge_two_lists(None, list2);
+        assert_eq!(list_to_vec(result), vec![4, 5, 6]);
         
-        let list2 = ListNode::from_vec(vec![4, 5, 6]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(None, list2)),
-            vec![4, 5, 6]
-        );
+        // Single node lists
+        let list1 = vec_to_list(vec![1]);
+        let list2 = vec_to_list(vec![2]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2]);
+        
+        let list1 = vec_to_list(vec![2]);
+        let list2 = vec_to_list(vec![1]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2]);
     }
 
     #[test]
-    fn test_single_element_lists() {
+    fn test_identical_values() {
         let solution = setup();
         
-        // Same values
-        let list1 = ListNode::from_vec(vec![1]);
-        let list2 = ListNode::from_vec(vec![1]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 1]
-        );
+        // All same values
+        let list1 = vec_to_list(vec![1, 1, 1]);
+        let list2 = vec_to_list(vec![1, 1]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 1, 1, 1, 1]);
         
-        // Different values
-        let list1 = ListNode::from_vec(vec![1]);
-        let list2 = ListNode::from_vec(vec![2]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 2]
-        );
+        // Mixed with duplicates
+        let list1 = vec_to_list(vec![1, 2, 2, 3]);
+        let list2 = vec_to_list(vec![2, 2, 4]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2, 2, 2, 2, 3, 4]);
+    }
+
+    #[test]
+    fn test_disjoint_ranges() {
+        let solution = setup();
         
-        let list1 = ListNode::from_vec(vec![2]);
-        let list2 = ListNode::from_vec(vec![1]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 2]
-        );
+        // List1 completely before list2
+        let list1 = vec_to_list(vec![1, 2, 3]);
+        let list2 = vec_to_list(vec![4, 5, 6]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2, 3, 4, 5, 6]);
+        
+        // List2 completely before list1
+        let list1 = vec_to_list(vec![4, 5, 6]);
+        let list2 = vec_to_list(vec![1, 2, 3]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2, 3, 4, 5, 6]);
+    }
+
+    #[test]
+    fn test_interleaved_values() {
+        let solution = setup();
+        
+        // Perfect interleaving
+        let list1 = vec_to_list(vec![1, 3, 5, 7]);
+        let list2 = vec_to_list(vec![2, 4, 6, 8]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        
+        // Complex interleaving
+        let list1 = vec_to_list(vec![1, 4, 7, 10]);
+        let list2 = vec_to_list(vec![2, 3, 8, 9, 11]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2, 3, 4, 7, 8, 9, 10, 11]);
+    }
+
+    #[test]
+    fn test_negative_values() {
+        let solution = setup();
+        
+        // Mixed positive and negative
+        let list1 = vec_to_list(vec![-3, -1, 2]);
+        let list2 = vec_to_list(vec![-2, 0, 4]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![-3, -2, -1, 0, 2, 4]);
+        
+        // All negative
+        let list1 = vec_to_list(vec![-10, -5, -1]);
+        let list2 = vec_to_list(vec![-8, -3]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![-10, -8, -5, -3, -1]);
     }
 
     #[test]
     fn test_different_lengths() {
         let solution = setup();
         
-        // First list shorter
-        let list1 = ListNode::from_vec(vec![1, 3]);
-        let list2 = ListNode::from_vec(vec![2, 4, 5, 6]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 2, 3, 4, 5, 6]
-        );
+        // First list much longer
+        let list1 = vec_to_list(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        let list2 = vec_to_list(vec![2, 5]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2, 2, 3, 4, 5, 5, 6, 7, 8]);
         
-        // Second list shorter
-        let list1 = ListNode::from_vec(vec![1, 3, 5, 7]);
-        let list2 = ListNode::from_vec(vec![2, 4]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 2, 3, 4, 5, 7]
-        );
+        // Second list much longer
+        let list1 = vec_to_list(vec![3, 7]);
+        let list2 = vec_to_list(vec![1, 2, 4, 5, 6, 8, 9]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
     }
 
     #[test]
-    fn test_no_interleaving() {
-        let solution = setup();
-        
-        // All elements from list1 come before list2
-        let list1 = ListNode::from_vec(vec![1, 2, 3]);
-        let list2 = ListNode::from_vec(vec![4, 5, 6]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 2, 3, 4, 5, 6]
-        );
-        
-        // All elements from list2 come before list1
-        let list1 = ListNode::from_vec(vec![4, 5, 6]);
-        let list2 = ListNode::from_vec(vec![1, 2, 3]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 2, 3, 4, 5, 6]
-        );
-    }
-
-    #[test]
-    fn test_negative_numbers() {
-        let solution = setup();
-        
-        let list1 = ListNode::from_vec(vec![-10, -5, 0]);
-        let list2 = ListNode::from_vec(vec![-7, -3, 2]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![-10, -7, -5, -3, 0, 2]
-        );
-    }
-
-    #[test]
-    fn test_duplicate_values() {
-        let solution = setup();
-        
-        // Multiple duplicates
-        let list1 = ListNode::from_vec(vec![1, 1, 2, 3, 3]);
-        let list2 = ListNode::from_vec(vec![1, 2, 2, 3, 4]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![1, 1, 1, 2, 2, 2, 3, 3, 3, 4]
-        );
-        
-        // All same value
-        let list1 = ListNode::from_vec(vec![2, 2, 2]);
-        let list2 = ListNode::from_vec(vec![2, 2]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![2, 2, 2, 2, 2]
-        );
-    }
-
-    #[test]
-    fn test_boundary_values() {
-        let solution = setup();
-        
-        // Using constraint boundaries: -100 <= Node.val <= 100
-        let list1 = ListNode::from_vec(vec![-100, 0, 50]);
-        let list2 = ListNode::from_vec(vec![-50, 25, 100]);
-        assert_eq!(
-            ListNode::to_vec(solution.merge_two_lists(list1, list2)),
-            vec![-100, -50, 0, 25, 50, 100]
-        );
-    }
-
-    #[test]
-    fn test_all_approaches_consistency() {
+    fn test_approach_consistency() {
         let solution = setup();
         
         let test_cases = vec![
             (vec![1, 2, 4], vec![1, 3, 4]),
-            (vec![], vec![]),
             (vec![], vec![0]),
-            (vec![1], vec![]),
-            (vec![2], vec![1]),
+            (vec![1], vec![2]),
             (vec![1, 3, 5], vec![2, 4, 6]),
-            (vec![-10, 0, 10], vec![-5, 5]),
-            (vec![1, 1, 1], vec![2, 2]),
+            (vec![-1, 0, 3], vec![-2, 1, 4]),
         ];
         
         for (vals1, vals2) in test_cases {
-            let list1_1 = ListNode::from_vec(vals1.clone());
-            let list2_1 = ListNode::from_vec(vals2.clone());
-            let result1 = solution.merge_two_lists(list1_1, list2_1);
+            let list1_1 = vec_to_list(vals1.clone());
+            let list2_1 = vec_to_list(vals2.clone());
+            let result1 = list_to_vec(solution.merge_two_lists(list1_1, list2_1));
             
-            let list1_2 = ListNode::from_vec(vals1.clone());
-            let list2_2 = ListNode::from_vec(vals2.clone());
-            let result2 = solution.merge_two_lists_recursive(list1_2, list2_2);
+            let list1_2 = vec_to_list(vals1.clone());
+            let list2_2 = vec_to_list(vals2.clone());
+            let result2 = list_to_vec(solution.merge_two_lists_recursive(list1_2, list2_2));
             
-            let list1_3 = ListNode::from_vec(vals1.clone());
-            let list2_3 = ListNode::from_vec(vals2.clone());
-            let result3 = solution.merge_two_lists_vector_antipattern(list1_3, list2_3);
+            let list1_3 = vec_to_list(vals1.clone());
+            let list2_3 = vec_to_list(vals2.clone());
+            let result3 = list_to_vec(solution.merge_two_lists_vector(list1_3, list2_3));
             
-            let list1_4 = ListNode::from_vec(vals1.clone());
-            let list2_4 = ListNode::from_vec(vals2.clone());
-            let result4 = solution.merge_two_lists_heap_overkill(list1_4, list2_4);
+            let list1_4 = vec_to_list(vals1.clone());
+            let list2_4 = vec_to_list(vals2.clone());
+            let result4 = list_to_vec(solution.merge_two_lists_in_place(list1_4, list2_4));
             
-            let vec1 = ListNode::to_vec(result1);
-            let vec2 = ListNode::to_vec(result2);
-            let vec3 = ListNode::to_vec(result3);
-            let vec4 = ListNode::to_vec(result4);
+            let list1_5 = vec_to_list(vals1.clone());
+            let list2_5 = vec_to_list(vals2.clone());
+            let result5 = list_to_vec(solution.merge_two_lists_priority_queue(list1_5, list2_5));
             
-            assert_eq!(vec1, vec2, "Recursive differs for {:?}, {:?}", vals1, vals2);
-            assert_eq!(vec1, vec3, "Vector antipattern differs for {:?}, {:?}", vals1, vals2);
-            assert_eq!(vec1, vec4, "Heap overkill differs for {:?}, {:?}", vals1, vals2);
+            let list1_6 = vec_to_list(vals1.clone());
+            let list2_6 = vec_to_list(vals2.clone());
+            let result6 = list_to_vec(solution.merge_two_lists_stack(list1_6, list2_6));
+            
+            assert_eq!(result1, result2, "Iterative vs Recursive mismatch for {:?}, {:?}", vals1, vals2);
+            assert_eq!(result2, result3, "Recursive vs Vector mismatch for {:?}, {:?}", vals1, vals2);
+            assert_eq!(result3, result4, "Vector vs In-place mismatch for {:?}, {:?}", vals1, vals2);
+            assert_eq!(result4, result5, "In-place vs Priority Queue mismatch for {:?}, {:?}", vals1, vals2);
+            assert_eq!(result5, result6, "Priority Queue vs Stack mismatch for {:?}, {:?}", vals1, vals2);
         }
     }
 
     #[test]
-    fn test_merge_stability() {
+    fn test_boundary_conditions() {
         let solution = setup();
         
-        // Test that equal elements maintain relative order (stable sort property)
-        // Since we use <= in comparison, elements from list1 should come before list2
-        // when values are equal
-        let list1 = ListNode::from_vec(vec![1, 3, 5]);
-        let list2 = ListNode::from_vec(vec![1, 3, 5]);
+        // Maximum values within constraint
+        let list1 = vec_to_list(vec![100]);
+        let list2 = vec_to_list(vec![100]);
         let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![100, 100]);
         
-        // The result should interleave: [1, 1, 3, 3, 5, 5]
-        // This tests the stability of our merge (list1 elements come first for ties)
-        assert_eq!(ListNode::to_vec(result), vec![1, 1, 3, 3, 5, 5]);
+        // Minimum values within constraint
+        let list1 = vec_to_list(vec![-100]);
+        let list2 = vec_to_list(vec![-100]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![-100, -100]);
+        
+        // Full range
+        let list1 = vec_to_list(vec![-100, 0]);
+        let list2 = vec_to_list(vec![-50, 100]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![-100, -50, 0, 100]);
     }
 
     #[test]
-    fn test_large_lists() {
+    fn test_mathematical_properties() {
         let solution = setup();
         
-        // Test with maximum constraint size (50 nodes each)
-        let list1_vals: Vec<i32> = (0..50).step_by(2).collect(); // [0, 2, 4, ..., 98]
-        let list2_vals: Vec<i32> = (1..50).step_by(2).collect(); // [1, 3, 5, ..., 49]
-        
-        let list1 = ListNode::from_vec(list1_vals.clone());
-        let list2 = ListNode::from_vec(list2_vals.clone());
-        
+        // Property: Result length = sum of input lengths
+        let list1 = vec_to_list(vec![1, 3, 5]);
+        let list2 = vec_to_list(vec![2, 4, 6, 7]);
+        let original_len = 3 + 4;
         let result = solution.merge_two_lists(list1, list2);
-        let result_vec = ListNode::to_vec(result);
+        assert_eq!(list_to_vec(result).len(), original_len);
         
-        // Should be sorted sequence from 0 to 49 (but missing some values due to step_by)
-        let mut expected = list1_vals;
-        expected.extend(list2_vals);
-        expected.sort();
+        // Property: Result is sorted
+        let list1 = vec_to_list(vec![1, 4, 7]);
+        let list2 = vec_to_list(vec![2, 3, 8, 9]);
+        let result = list_to_vec(solution.merge_two_lists(list1, list2));
+        let mut sorted_result = result.clone();
+        sorted_result.sort();
+        assert_eq!(result, sorted_result);
         
-        assert_eq!(result_vec, expected);
-        assert_eq!(result_vec.len(), 50); // 25 + 25 = 50 total elements
+        // Property: All elements preserved
+        let vals1 = vec![1, 3, 5];
+        let vals2 = vec![2, 4, 6];
+        let list1 = vec_to_list(vals1.clone());
+        let list2 = vec_to_list(vals2.clone());
+        let result = list_to_vec(solution.merge_two_lists(list1, list2));
+        
+        let mut all_input = vals1;
+        all_input.extend(vals2);
+        all_input.sort();
+        
+        assert_eq!(result, all_input);
     }
 
     #[test]
-    fn test_linked_list_structure_preservation() {
+    fn test_performance_patterns() {
         let solution = setup();
         
-        // Verify that we're actually reusing nodes, not creating new ones
-        // This is a bit tricky to test directly, but we can at least verify
-        // that the merge doesn't create extra nodes
-        let list1 = ListNode::from_vec(vec![1, 3, 5]);
-        let list2 = ListNode::from_vec(vec![2, 4, 6]);
-        
+        // Many duplicates
+        let list1 = vec_to_list(vec![1; 25]);
+        let list2 = vec_to_list(vec![1; 25]);
         let result = solution.merge_two_lists(list1, list2);
-        let result_vec = ListNode::to_vec(result);
+        assert_eq!(list_to_vec(result), vec![1; 50]);
         
-        assert_eq!(result_vec, vec![1, 2, 3, 4, 5, 6]);
-        assert_eq!(result_vec.len(), 6); // Exactly the sum of input lengths
+        // Ascending sequence
+        let list1 = vec_to_list((0..26).step_by(2).collect());  // Even numbers: 0,2,4,...,24
+        let list2 = vec_to_list((1..26).step_by(2).collect());  // Odd numbers: 1,3,5,...,25
+        let result = list_to_vec(solution.merge_two_lists(list1, list2));
+        assert_eq!(result, (0..26).collect::<Vec<i32>>());
+        
+        // Descending interleave
+        let list1 = vec_to_list(vec![-50, -30, -10]);
+        let list2 = vec_to_list(vec![-40, -20, 0]);
+        let result = solution.merge_two_lists(list1, list2);
+        assert_eq!(list_to_vec(result), vec![-50, -40, -30, -20, -10, 0]);
     }
 }
