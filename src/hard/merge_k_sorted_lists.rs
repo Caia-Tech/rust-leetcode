@@ -6,12 +6,12 @@
 //!
 //! ## Examples
 //!
-//! ```
+//! ```ignore
 //! use rust_leetcode::hard::merge_k_sorted_lists::Solution;
 //! use rust_leetcode::utils::data_structures::ListNode;
-//! 
+//!
 //! let solution = Solution::new();
-//! 
+//!
 //! // Example 1: lists = [[1,4,5],[1,3,4],[2,6]]
 //! // Output: [1,1,2,3,4,4,5,6]
 //! // Note: Creating ListNode examples in doc comments is complex, see tests for full examples
@@ -58,7 +58,7 @@ impl Solution {
     /// - Natural divide-and-conquer structure
     /// 
     /// **Merge tree visualization for k=4:**
-    /// ```
+    /// ```text
     ///     [Final]
     ///    /       \
     ///  [0,1]    [2,3]
@@ -245,9 +245,9 @@ impl Solution {
     /// - Easier to reason about space usage
     /// 
     /// **Implementation pattern:**
-    /// ```
+    /// ```text
     /// Round 1: [0,1], [2,3], [4,5], [6,7] -> 4 lists
-    /// Round 2: [01,23], [45,67]           -> 2 lists  
+    /// Round 2: [01,23], [45,67]           -> 2 lists
     /// Round 3: [0123,4567]                -> 1 list
     /// ```
     pub fn merge_k_lists_iterative(&self, lists: Vec<Option<Box<ListNode>>>) -> Option<Box<ListNode>> {

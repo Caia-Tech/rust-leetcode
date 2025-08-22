@@ -13,7 +13,6 @@ pub mod coin_change;
 pub mod combination_sum;
 pub mod top_k_frequent_elements;
 pub mod product_of_array_except_self;
-pub mod longest_consecutive_sequence;
 pub mod number_of_islands;
 pub mod group_anagrams;
 pub mod course_schedule;

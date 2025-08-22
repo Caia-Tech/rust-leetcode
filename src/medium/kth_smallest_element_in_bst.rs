@@ -136,51 +136,50 @@ impl Solution {
     /// Space Complexity: O(1)
     pub fn kth_smallest_morris(&self, root: Option<Rc<RefCell<TreeNode>>>, k: i32) -> i32 {
         let mut current = root;
-        let mut count = 0;
-        
-        while let Some(node) = current.take() {
-            let node_val = node.borrow().val;
-            let left = node.borrow().left.clone();
-            
-            if left.is_none() {
-                // No left subtree, process current node
-                count += 1;
-                if count == k {
-                    return node_val;
+        let mut k = k;
+        let mut result = -1;
+
+        while let Some(node_rc) = current.clone() {
+            if node_rc.borrow().left.is_none() {
+                current = node_rc.borrow().right.clone();
+                k -= 1;
+                if k == 0 {
+                    result = node_rc.borrow().val;
+                    break;
                 }
-                current = node.borrow().right.clone();
             } else {
-                // Find inorder predecessor
-                let mut predecessor = left.clone();
-                loop {
-                    let pred_ref = predecessor.as_ref().unwrap();
-                    let pred_right = pred_ref.borrow().right.clone();
-                    if pred_right.is_none() || Rc::ptr_eq(pred_right.as_ref().unwrap(), &node) {
+                let mut pred = node_rc.borrow().left.clone();
+                while let Some(ref p) = pred.clone() {
+                    if let Some(r) = p.borrow().right.clone() {
+                        if Rc::ptr_eq(&r, &node_rc) {
+                            break;
+                        }
+                        pred = Some(r);
+                    } else {
                         break;
                     }
-                    predecessor = pred_right;
                 }
-                
-                if let Some(pred) = predecessor {
-                    let pred_right = pred.borrow().right.clone();
-                    if pred_right.is_none() {
-                        // Create thread
-                        pred.borrow_mut().right = Some(node.clone());
-                        current = left;
+
+                if let Some(ref p) = pred {
+                    if p.borrow().right.is_none() {
+                        p.borrow_mut().right = Some(node_rc.clone());
+                        current = node_rc.borrow().left.clone();
                     } else {
-                        // Remove thread and process current node
-                        pred.borrow_mut().right = None;
-                        count += 1;
-                        if count == k {
-                            return node_val;
+                        p.borrow_mut().right = None;
+                        current = node_rc.borrow().right.clone();
+                        k -= 1;
+                        if k == 0 {
+                            result = node_rc.borrow().val;
+                            break;
                         }
-                        current = node.borrow().right.clone();
                     }
+                } else {
+                    current = None;
                 }
             }
         }
-        
-        -1 // Should never reach here with valid input
+
+        result
     }
     
     /// Approach 5: Augmented BST with Subtree Sizes
@@ -503,14 +502,12 @@ mod tests {
         let solution = Solution;
         
         // Morris traversal should use O(1) space
-        let root = build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]);
-        
         // Test that Morris traversal works correctly
         // For BST [3,1,4,null,2], inorder is [1,2,3,4]
-        assert_eq!(solution.kth_smallest_morris(root.clone(), 1), 1);
-        assert_eq!(solution.kth_smallest_morris(root.clone(), 2), 2);
-        assert_eq!(solution.kth_smallest_morris(root.clone(), 3), 3);
-        assert_eq!(solution.kth_smallest_morris(root, 4), 4);
+        assert_eq!(solution.kth_smallest_morris(build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]), 1), 1);
+        assert_eq!(solution.kth_smallest_morris(build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]), 2), 2);
+        assert_eq!(solution.kth_smallest_morris(build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]), 3), 3);
+        assert_eq!(solution.kth_smallest_morris(build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]), 4), 4);
     }
     
     #[test]

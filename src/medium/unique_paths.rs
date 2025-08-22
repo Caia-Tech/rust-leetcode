@@ -10,13 +10,13 @@
 //! The test cases are generated so that the answer will be less than or equal to 2 * 10^9.
 //!
 //! **Example 1:**
-//! ```
+//! ```text
 //! Input: m = 3, n = 7
 //! Output: 28
 //! ```
 //!
 //! **Example 2:**
-//! ```
+//! ```text
 //! Input: m = 3, n = 2
 //! Output: 3
 //! Explanation: From the top-left corner, there are a total of 3 ways to reach the bottom-right corner:
@@ -424,16 +424,15 @@ mod tests {
     fn test_performance_comparison() {
         let solution = Solution;
         
-        // Test that math approach works efficiently for larger inputs
-        let result = solution.unique_paths_math(50, 50);
+        // Test that math approach works efficiently for moderately large inputs
+        let result = solution.unique_paths_math(15, 15);
         assert!(result > 0);
-        
-        // For performance testing, we mainly test the math approach for large inputs
-        // since other approaches might be too slow or use too much memory
+
+        // For performance testing, use sizes that avoid overflow
         let large_results = vec![
-            solution.unique_paths_math(30, 30),
-            solution.unique_paths_math(25, 35),
-            solution.unique_paths_math(40, 20),
+            solution.unique_paths_math(20, 10),
+            solution.unique_paths_math(10, 20),
+            solution.unique_paths_math(16, 16),
         ];
         
         for result in large_results {

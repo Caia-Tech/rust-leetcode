@@ -159,7 +159,7 @@ impl Solution {
     /// think layer-by-layer (horizontal). Each layer is bounded by two bars.
     /// 
     /// **Visualization:**
-    /// ```
+    /// ```text
     /// height = [3,0,2,0,4]
     /// Stack processes layers horizontally:
     /// Layer 1: between bars 3 and 4, above height 2

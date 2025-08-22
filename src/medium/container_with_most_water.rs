@@ -8,7 +8,7 @@
 //!
 //! ## Examples
 //!
-//! ```
+//! ```text
 //! Input: height = [1,8,6,2,5,4,8,3,7]
 //! Output: 49
 //! Explanation: The above vertical lines are represented by array [1,8,6,2,5,4,8,3,7].
@@ -49,11 +49,11 @@ impl Solution {
     /// - By moving the shorter line, we might find a taller line that increases area
     /// 
     /// **Visualization:**
-    /// ```
+    /// ```text
     /// height = [1,8,6,2,5,4,8,3,7]
     ///          ↑               ↑
     ///          left            right
-    /// 
+    ///
     /// area = min(1, 7) * (8 - 0) = 1 * 8 = 8
     /// Since height[left] < height[right], move left++
     /// ```

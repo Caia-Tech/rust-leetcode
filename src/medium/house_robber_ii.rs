@@ -9,14 +9,14 @@
 //! you can rob tonight without alerting the police.
 //!
 //! **Example 1:**
-//! ```
+//! ```text
 //! Input: nums = [2,3,2]
 //! Output: 3
 //! Explanation: You cannot rob house 0 and 2 (they are adjacent) since they are adjacent, so you rob house 1.
 //! ```
 //!
 //! **Example 2:**
-//! ```
+//! ```text
 //! Input: nums = [1,2,3,1]
 //! Output: 4
 //! Explanation: Rob house 1 (money = 2) and house 3 (money = 1). Total amount = 2 + 1 = 4.
