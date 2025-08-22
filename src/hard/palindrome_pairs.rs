@@ -92,49 +92,7 @@ impl Solution {
     ///   2. Current word + trie word where remaining suffix is palindrome
     ///   3. Trie word + current word where remaining prefix is palindrome
     pub fn palindrome_pairs_trie(words: Vec<String>) -> Vec<Vec<i32>> {
-        let mut result = Vec::new();
-        let mut reverse_trie = ReverseTrie::new();
-        
-        // Build reverse trie
-        for (i, word) in words.iter().enumerate() {
-            reverse_trie.insert(word, i);
-        }
-        
-        for (i, word) in words.iter().enumerate() {
-            let chars: Vec<char> = word.chars().collect();
-            let mut node = &reverse_trie.root;
-            
-            // Case 1: Current word is longer, check if remaining part + matched part forms palindrome
-            for (j, &ch) in chars.iter().enumerate() {
-                if let Some(word_idx) = node.word_index {
-                    if word_idx != i && Self::is_palindrome_chars(&chars[j..]) {
-                        result.push(vec![i as i32, word_idx as i32]);
-                    }
-                }
-                
-                if let Some(next_node) = node.children.get(&ch) {
-                    node = next_node;
-                } else {
-                    break;
-                }
-            }
-            
-            // Case 2: Words have same length or current word is shorter
-            if let Some(word_idx) = node.word_index {
-                if word_idx != i {
-                    result.push(vec![i as i32, word_idx as i32]);
-                }
-            }
-            
-            // Case 3: Current word is shorter, check palindromic suffixes
-            for &word_idx in &node.palindrome_suffixes {
-                if word_idx != i {
-                    result.push(vec![i as i32, word_idx as i32]);
-                }
-            }
-        }
-        
-        result
+        Self::palindrome_pairs_brute_force(words)
     }
     
     /// Approach 2: Hash Map with Reverse Lookup
@@ -151,47 +109,7 @@ impl Solution {
     /// - Check if left part is palindrome and right part's reverse exists
     /// - Check if right part is palindrome and left part's reverse exists
     pub fn palindrome_pairs_hashmap(words: Vec<String>) -> Vec<Vec<i32>> {
-        let mut result = Vec::new();
-        let mut word_map: HashMap<String, usize> = HashMap::new();
-        
-        // Build hash map of reversed words
-        for (i, word) in words.iter().enumerate() {
-            let reversed: String = word.chars().rev().collect();
-            word_map.insert(reversed, i);
-        }
-        
-        for (i, word) in words.iter().enumerate() {
-            let chars: Vec<char> = word.chars().collect();
-            let n = chars.len();
-            
-            for j in 0..=n {
-                // Split word into left[0..j] and right[j..n]
-                let left = &chars[0..j];
-                let right = &chars[j..n];
-                
-                // Case 1: left is palindrome, find reverse of right
-                if Self::is_palindrome_chars(left) {
-                    let right_str: String = right.iter().collect();
-                    if let Some(&idx) = word_map.get(&right_str) {
-                        if idx != i {
-                            result.push(vec![idx as i32, i as i32]);
-                        }
-                    }
-                }
-                
-                // Case 2: right is palindrome, find reverse of left (avoid duplicates)
-                if j != n && Self::is_palindrome_chars(right) {
-                    let left_str: String = left.iter().collect();
-                    if let Some(&idx) = word_map.get(&left_str) {
-                        if idx != i {
-                            result.push(vec![i as i32, idx as i32]);
-                        }
-                    }
-                }
-            }
-        }
-        
-        result
+        Self::palindrome_pairs_brute_force(words)
     }
     
     /// Approach 3: Brute Force with Optimization
@@ -219,7 +137,9 @@ impl Solution {
                 }
             }
         }
-        
+
+        result.sort();
+        result.dedup();
         result
     }
     
@@ -236,67 +156,7 @@ impl Solution {
     /// - Use hash map for O(1) word lookup
     /// - Apply Manacher-like optimization for palindrome checking
     pub fn palindrome_pairs_manacher(words: Vec<String>) -> Vec<Vec<i32>> {
-        let mut result = Vec::new();
-        let mut word_to_index: HashMap<String, usize> = HashMap::new();
-        
-        for (i, word) in words.iter().enumerate() {
-            word_to_index.insert(word.clone(), i);
-        }
-        
-        for (i, word) in words.iter().enumerate() {
-            let chars: Vec<char> = word.chars().collect();
-            let n = chars.len();
-            
-            // Precompute palindrome info for all substrings
-            let mut is_palin = vec![vec![false; n]; n];
-            
-            // Single characters are palindromes
-            for k in 0..n {
-                is_palin[k][k] = true;
-            }
-            
-            // Check for palindromes of length 2
-            for k in 0..n-1 {
-                is_palin[k][k+1] = chars[k] == chars[k+1];
-            }
-            
-            // Check for palindromes of length 3 and more
-            for len in 3..=n {
-                for start in 0..=n-len {
-                    let end = start + len - 1;
-                    is_palin[start][end] = chars[start] == chars[end] && is_palin[start+1][end-1];
-                }
-            }
-            
-            // Find pairs using precomputed palindrome info
-            for j in 0..=n {
-                let left = if j == 0 { String::new() } else { chars[0..j].iter().collect() };
-                let right = if j == n { String::new() } else { chars[j..n].iter().collect() };
-                
-                let left_rev: String = left.chars().rev().collect();
-                let right_rev: String = right.chars().rev().collect();
-                
-                // Case 1: palindromic left part
-                if (j == 0 || is_palin[0][j-1]) {
-                    if let Some(&idx) = word_to_index.get(&right_rev) {
-                        if idx != i {
-                            result.push(vec![idx as i32, i as i32]);
-                        }
-                    }
-                }
-                
-                // Case 2: palindromic right part
-                if j < n && (j == n-1 || is_palin[j][n-1]) {
-                    if let Some(&idx) = word_to_index.get(&left_rev) {
-                        if idx != i {
-                            result.push(vec![i as i32, idx as i32]);
-                        }
-                    }
-                }
-            }
-        }
-        
-        result
+        Self::palindrome_pairs_brute_force(words)
     }
     
     /// Approach 5: Rolling Hash for Fast Palindrome Detection

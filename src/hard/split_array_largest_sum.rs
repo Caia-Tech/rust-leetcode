@@ -9,7 +9,7 @@
 //!
 //! ## Examples
 //!
-//! ```
+//! ```text
 //! Input: nums = [7,2,5,10,8], k = 2
 //! Output: 18
 //! Explanation: There are four ways to split nums into two subarrays.
@@ -17,12 +17,12 @@
 //! where the largest sum among the two subarrays is only 18.
 //! ```
 //!
-//! ```
+//! ```text
 //! Input: nums = [1,2,3,4,5], k = 2
 //! Output: 9
 //! ```
 //!
-//! ```
+//! ```text
 //! Input: nums = [1,4,4], k = 3
 //! Output: 4
 //! ```

@@ -87,29 +87,29 @@ impl Solution {
         let n = board[0].len();
         
         fn dfs(board: &mut Vec<Vec<char>>, word: &[char], i: usize, j: usize, idx: usize) -> bool {
-            // Check if we've found the entire word
-            if idx == word.len() {
-                return true;
-            }
-            
             // Check boundaries and character match
             if i >= board.len() || j >= board[0].len() || board[i][j] != word[idx] {
                 return false;
             }
-            
+
+            // If this is the last character we're done
+            if idx == word.len() - 1 {
+                return true;
+            }
+
             // Mark current cell as visited
             let temp = board[i][j];
             board[i][j] = '#';
-            
+
             // Explore all 4 directions
             let found = (i > 0 && dfs(board, word, i - 1, j, idx + 1)) ||
                        (i + 1 < board.len() && dfs(board, word, i + 1, j, idx + 1)) ||
                        (j > 0 && dfs(board, word, i, j - 1, idx + 1)) ||
                        (j + 1 < board[0].len() && dfs(board, word, i, j + 1, idx + 1));
-            
+
             // Backtrack: restore original value
             board[i][j] = temp;
-            
+
             found
         }
         
@@ -152,20 +152,20 @@ impl Solution {
         let n = board[0].len();
         
         fn dfs(
-            board: &Vec<Vec<char>>, 
-            word: &[char], 
+            board: &Vec<Vec<char>>,
+            word: &[char],
             visited: &mut HashSet<(usize, usize)>,
-            i: usize, 
-            j: usize, 
+            i: usize,
+            j: usize,
             idx: usize
         ) -> bool {
-            if idx == word.len() {
-                return true;
-            }
-            
-            if i >= board.len() || j >= board[0].len() || 
+            if i >= board.len() || j >= board[0].len() ||
                visited.contains(&(i, j)) || board[i][j] != word[idx] {
                 return false;
+            }
+
+            if idx == word.len() - 1 {
+                return true;
             }
             
             visited.insert((i, j));
@@ -253,22 +253,22 @@ impl Solution {
         };
         
         fn dfs(board: &mut Vec<Vec<char>>, word: &[char], i: usize, j: usize, idx: usize) -> bool {
-            if idx == word.len() {
-                return true;
-            }
-            
             if i >= board.len() || j >= board[0].len() || board[i][j] != word[idx] {
                 return false;
             }
-            
+
+            if idx == word.len() - 1 {
+                return true;
+            }
+
             let temp = board[i][j];
             board[i][j] = '#';
-            
+
             let found = (i > 0 && dfs(board, word, i - 1, j, idx + 1)) ||
                        (i + 1 < board.len() && dfs(board, word, i + 1, j, idx + 1)) ||
                        (j > 0 && dfs(board, word, i, j - 1, idx + 1)) ||
                        (j + 1 < board[0].len() && dfs(board, word, i, j + 1, idx + 1));
-            
+
             board[i][j] = temp;
             found
         }
@@ -748,7 +748,7 @@ mod tests {
         
         // Path along edges
         assert_eq!(solution.exist(board.clone(), "ABCDEF".to_string()), true);
-        assert_eq!(solution.exist(board.clone(), "AFGMSY".to_string()), true);
+        assert_eq!(solution.exist(board.clone(), "AGMSY".to_string()), true);
         
         // Maximum word length (15)
         assert_eq!(solution.exist(board.clone(), "ABCDEFGHIJKLMNO".to_string()), false);
@@ -813,9 +813,9 @@ mod tests {
         // Zigzag path
         assert_eq!(solution.exist(board.clone(), "ABCDE".to_string()), true);
         assert_eq!(solution.exist(board.clone(), "ABEDC".to_string()), true);
-        
-        // Spiral path
-        assert_eq!(solution.exist(board.clone(), "ABCDEFGHI".to_string()), false); // Can't complete spiral
+
+        // Spiral path that uses every cell
+        assert_eq!(solution.exist(board.clone(), "ABCDEFGHI".to_string()), true);
     }
 
     #[test]

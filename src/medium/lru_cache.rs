@@ -14,7 +14,9 @@
 //!
 //! ## Examples
 //!
-//! ```
+//! ```rust
+//! use rust_leetcode::medium::lru_cache::LRUCache;
+//!
 //! let mut lru_cache = LRUCache::new(2);
 //! lru_cache.put(1, 1); // cache is {1=1}
 //! lru_cache.put(2, 2); // cache is {1=1, 2=2}

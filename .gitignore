@@ -46,3 +46,7 @@ debug_*
 # Temporary files
 *.tmp
 temp/
+
+# Local test binaries
+test_each_approach
+test_transpose

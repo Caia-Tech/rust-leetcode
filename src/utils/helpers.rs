@@ -1,24 +1,5 @@
 //! Helper functions and utilities
 
-/// Test helper macros and functions
-#[cfg(test)]
-pub mod test_helpers {
-    /// Macro to create test cases with multiple inputs and expected outputs
-    #[macro_export]
-    macro_rules! test_cases {
-        ($($name:ident: $inputs:expr => $expected:expr,)*) => {
-            $(
-                #[test]
-                fn $name() {
-                    let solution = Solution::new();
-                    let result = solution.solve($inputs);
-                    assert_eq!(result, $expected);
-                }
-            )*
-        };
-    }
-}
-
 /// Common mathematical utilities
 pub mod math {
     /// Check if a number is prime
@@ -33,7 +14,7 @@ pub mod math {
         }
         true
     }
-    
+
     /// Greatest common divisor
     pub fn gcd(a: i32, b: i32) -> i32 {
         if b == 0 {
