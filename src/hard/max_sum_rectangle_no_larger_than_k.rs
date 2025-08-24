@@ -20,7 +20,7 @@
 //! ```
 
 use std::collections::BTreeSet;
-use std::cmp::{max, min};
+use std::cmp::max;
 
 /// Solution struct for Max Sum of Rectangle No Larger Than K problem
 pub struct Solution;

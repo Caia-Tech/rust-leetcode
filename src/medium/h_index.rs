@@ -133,12 +133,12 @@ impl Solution {
         
         for h in (0..=n as i32).rev() {
             // Add papers with exactly h citations
-            if let Some(&count) = freq.get(&h) {
-                papers_with_at_least_h += count;
+            if let Some(&_count) = freq.get(&h) {
+                papers_with_at_least_h += _count;
             }
             
             // Also add papers with more than h citations
-            for (&citation, &count) in &freq {
+            for (&citation, &_count) in &freq {
                 if citation > h {
                     // This is already counted in previous iterations
                 }

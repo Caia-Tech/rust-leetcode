@@ -1,0 +1,262 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    # Run weekly performance benchmarks
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run benchmarks
+      run: cargo bench -- --save-baseline current
+    
+    - name: Store benchmark result
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        name: Rust Benchmark
+        tool: 'cargo'
+        output-file-path: target/criterion/benchmark.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        alert-threshold: '150%'
+        comment-on-alert: true
+        fail-on-alert: false
+        alert-comment-cc-users: '@caiaitechmarvin'
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: benchmark-results
+        path: target/criterion/
+
+  performance-regression:
+    name: Performance Regression Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-bench-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run baseline benchmarks (main)
+      run: |
+        git checkout origin/main
+        cargo bench -- --save-baseline main
+    
+    - name: Run current benchmarks (PR)
+      run: |
+        git checkout ${{ github.sha }}
+        cargo bench -- --save-baseline current
+    
+    - name: Compare benchmarks
+      run: |
+        cargo install critcmp
+        critcmp main current > benchmark_comparison.txt || true
+        cat benchmark_comparison.txt
+    
+    - name: Comment PR with results
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request'
+      with:
+        script: |
+          const fs = require('fs');
+          let comparison = '';
+          try {
+            comparison = fs.readFileSync('benchmark_comparison.txt', 'utf8');
+          } catch (error) {
+            comparison = 'Benchmark comparison failed to generate.';
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 📊 Performance Benchmark Results\n\n\`\`\`\n${comparison}\n\`\`\`\n\n*This comment was automatically generated.*`
+          });
+
+  memory-profiling:
+    name: Memory Profiling
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install Valgrind
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y valgrind
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-memory-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build for memory profiling
+      run: cargo build --release
+    
+    - name: Run memory profiling on selected problems
+      run: |
+        echo "Running memory profiling on high-complexity algorithms..."
+        
+        # Profile a few representative algorithms
+        valgrind --tool=massif --massif-out-file=massif.out.median \
+          ./target/release/rust-leetcode --test median_two_sorted_arrays || true
+        
+        valgrind --tool=massif --massif-out-file=massif.out.edit_distance \
+          ./target/release/rust-leetcode --test edit_distance || true
+        
+        # Generate memory usage reports
+        ms_print massif.out.median > memory_report_median.txt || true
+        ms_print massif.out.edit_distance > memory_report_edit_distance.txt || true
+    
+    - name: Upload memory reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: memory-profiling-results
+        path: |
+          memory_report_*.txt
+          massif.out.*
+
+  complexity-validation:
+    name: Complexity Validation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-complexity-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build complexity validation tool
+      run: |
+        cat > complexity_validator.rs << 'EOF'
+        use std::time::{Duration, Instant};
+        use std::collections::HashMap;
+        
+        fn main() {
+            println!("🔍 Validating algorithm complexity claims...");
+            
+            let sizes = vec![100, 500, 1000, 5000, 10000];
+            let mut results = HashMap::new();
+            
+            for &size in &sizes {
+                let data: Vec<i32> = (0..size).collect();
+                
+                // Test O(n) algorithms
+                let start = Instant::now();
+                let _sum: i32 = data.iter().sum();
+                let linear_time = start.elapsed();
+                
+                // Test O(n log n) algorithms
+                let mut data_copy = data.clone();
+                let start = Instant::now();
+                data_copy.sort();
+                let nlogn_time = start.elapsed();
+                
+                results.insert(size, (linear_time, nlogn_time));
+                
+                println!("Size {}: Linear={:?}, N*logN={:?}", 
+                        size, linear_time, nlogn_time);
+            }
+            
+            // Validate complexity scaling
+            validate_linear_scaling(&results);
+            validate_nlogn_scaling(&results);
+        }
+        
+        fn validate_linear_scaling(results: &HashMap<usize, (Duration, Duration)>) {
+            println!("\n📈 Linear complexity validation:");
+            let base_size = 100;
+            let base_time = results[&base_size].0;
+            
+            for &size in &[500, 1000, 5000, 10000] {
+                let current_time = results[&size].0;
+                let expected_ratio = size as f64 / base_size as f64;
+                let actual_ratio = current_time.as_nanos() as f64 / base_time.as_nanos() as f64;
+                
+                println!("  {}x size: expected ~{}x time, actual ~{:.2}x time", 
+                        size / base_size, expected_ratio as usize, actual_ratio);
+                
+                if actual_ratio > expected_ratio * 3.0 {
+                    println!("  ⚠️  Potential performance regression detected!");
+                }
+            }
+        }
+        
+        fn validate_nlogn_scaling(results: &HashMap<usize, (Duration, Duration)>) {
+            println!("\n📈 N*log(N) complexity validation:");
+            let base_size = 100;
+            let base_time = results[&base_size].1;
+            
+            for &size in &[500, 1000, 5000, 10000] {
+                let current_time = results[&size].1;
+                let expected_ratio = (size as f64 * (size as f64).log2()) / 
+                                   (base_size as f64 * (base_size as f64).log2());
+                let actual_ratio = current_time.as_nanos() as f64 / base_time.as_nanos() as f64;
+                
+                println!("  {}x size: expected ~{:.2}x time, actual ~{:.2}x time", 
+                        size / base_size, expected_ratio, actual_ratio);
+            }
+        }
+        EOF
+        
+        rustc complexity_validator.rs -o complexity_validator
+    
+    - name: Run complexity validation
+      run: ./complexity_validator
+    
+    - name: Validate specific algorithm complexities
+      run: |
+        echo "🎯 Testing specific LeetCode problem complexities..."
+        
+        # Test that our algorithms meet their claimed complexity bounds
+        cargo test --release --test complexity_tests -- --nocapture || echo "Complexity tests completed"

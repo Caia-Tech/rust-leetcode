@@ -23,8 +23,8 @@
 //! Output: 1
 //! ```
 
-use std::cmp::{max, min, Ordering};
-use std::collections::{HashMap, BTreeSet};
+use std::cmp::{max, Ordering};
+use std::collections::HashMap;
 
 /// Solution struct for Russian Doll Envelopes problem
 pub struct Solution;

@@ -35,7 +35,7 @@ impl Solution {
         
         let chars: Vec<char> = s.chars().collect();
         let n = chars.len();
-        let mut reversed: Vec<char> = chars.iter().rev().cloned().collect();
+        let reversed: Vec<char> = chars.iter().rev().cloned().collect();
         
         // Create pattern: s + "#" + reverse(s)
         let mut pattern = chars.clone();

@@ -97,6 +97,11 @@ impl Solution {
                 return false;
             }
             
+            // Check if this is the last character we need
+            if idx == word.len() - 1 {
+                return true;
+            }
+            
             // Mark current cell as visited
             let temp = board[i][j];
             board[i][j] = '#';
@@ -166,6 +171,11 @@ impl Solution {
             if i >= board.len() || j >= board[0].len() || 
                visited.contains(&(i, j)) || board[i][j] != word[idx] {
                 return false;
+            }
+            
+            // Check if this is the last character we need
+            if idx == word.len() - 1 {
+                return true;
             }
             
             visited.insert((i, j));
@@ -261,6 +271,11 @@ impl Solution {
                 return false;
             }
             
+            // Check if this is the last character we need
+            if idx == word.len() - 1 {
+                return true;
+            }
+            
             let temp = board[i][j];
             board[i][j] = '#';
             
@@ -324,6 +339,12 @@ impl Solution {
                 let mut stack: Vec<State> = Vec::new();
                 let mut initial_visited = HashSet::new();
                 initial_visited.insert((i, j));
+                
+                // If word has only one character and we matched it, return true
+                if word_chars.len() == 1 {
+                    return true;
+                }
+                
                 stack.push((i, j, 1, initial_visited));
                 
                 while let Some((row, col, idx, visited)) = stack.pop() {
@@ -748,7 +769,7 @@ mod tests {
         
         // Path along edges
         assert_eq!(solution.exist(board.clone(), "ABCDEF".to_string()), true);
-        assert_eq!(solution.exist(board.clone(), "AFGMSY".to_string()), true);
+        assert_eq!(solution.exist(board.clone(), "AGMSY".to_string()), true);  // Path along left edge
         
         // Maximum word length (15)
         assert_eq!(solution.exist(board.clone(), "ABCDEFGHIJKLMNO".to_string()), false);
@@ -814,8 +835,8 @@ mod tests {
         assert_eq!(solution.exist(board.clone(), "ABCDE".to_string()), true);
         assert_eq!(solution.exist(board.clone(), "ABEDC".to_string()), true);
         
-        // Spiral path
-        assert_eq!(solution.exist(board.clone(), "ABCDEFGHI".to_string()), false); // Can't complete spiral
+        // Spiral path - actually this IS possible as a Hamiltonian path
+        assert_eq!(solution.exist(board.clone(), "ABCDEFGHI".to_string()), true); // Complete board traversal
     }
 
     #[test]

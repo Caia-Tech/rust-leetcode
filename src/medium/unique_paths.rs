@@ -111,15 +111,19 @@ impl Solution {
         let m = m as usize;
         let n = n as usize;
         
-        let mut dp = vec![1; n];
+        let mut dp = vec![1i64; n];
         
         for _ in 1..m {
             for j in 1..n {
-                dp[j] = dp[j] + dp[j-1];
+                dp[j] = dp[j].saturating_add(dp[j-1]);
+                // Cap at i32::MAX to prevent overflow when converting back
+                if dp[j] > i32::MAX as i64 {
+                    dp[j] = i32::MAX as i64;
+                }
             }
         }
         
-        dp[n-1]
+        dp[n-1].min(i32::MAX as i64) as i32
     }
     
     /// Approach 4: Recursive with Memoization

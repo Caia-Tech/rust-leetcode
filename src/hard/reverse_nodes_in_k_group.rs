@@ -365,7 +365,7 @@ mod tests {
     fn test_empty_list() {
         let head = None;
         let result = Solution::reverse_k_group_state_machine(head, 2);
-        assert_eq!(list_to_vec(result), vec![]);
+        assert_eq!(list_to_vec(result), Vec::<i32>::new());
     }
     
     #[test]

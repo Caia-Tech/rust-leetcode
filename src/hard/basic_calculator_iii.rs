@@ -26,7 +26,6 @@
 //! Output: 21
 //! ```
 
-use std::collections::VecDeque;
 
 /// Solution struct for Basic Calculator III problem
 pub struct Solution;

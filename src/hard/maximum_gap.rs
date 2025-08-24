@@ -42,7 +42,7 @@ impl Solution {
     ///   by the Pigeonhole Principle, at least one interval must be empty
     /// - The maximum gap must be at least the size of one interval
     /// - We only need to check gaps between consecutive non-empty buckets
-    pub fn maximum_gap_bucket_sort(mut nums: Vec<i32>) -> i32 {
+    pub fn maximum_gap_bucket_sort(nums: Vec<i32>) -> i32 {
         let n = nums.len();
         if n < 2 {
             return 0;

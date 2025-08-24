@@ -17,5 +17,9 @@ pub mod hard;
 /// Common utilities, data structures, and helper functions
 pub mod utils;
 
+/// LeetCode API integration for automated problem fetching
+pub mod api;
+
 /// Re-export commonly used types and traits
 pub use utils::*;
+pub use api::*;

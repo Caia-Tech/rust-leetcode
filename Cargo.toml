@@ -14,6 +14,11 @@ categories = ["algorithms", "data-structures"]
 
 [dependencies]
 rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1.0", features = ["full"] }
 
 [dev-dependencies]
 # Testing framework enhancements
@@ -28,6 +33,34 @@ harness = false
 [lib]
 name = "rust_leetcode"
 path = "src/lib.rs"
+
+[[bin]]
+name = "problem-selector"
+path = "src/bin/problem_selector.rs"
+
+[[bin]]
+name = "progress-tracker"
+path = "src/bin/progress_tracker.rs"
+
+[[bin]]
+name = "interview-simulator"
+path = "src/bin/interview_simulator.rs"
+
+[[bin]]
+name = "solution-generator"
+path = "src/bin/solution_generator_simple.rs"
+
+[[bin]]
+name = "problem-fetcher"
+path = "src/bin/problem_fetcher.rs"
+
+[[bin]]
+name = "api-demo"
+path = "src/bin/api_demo.rs"
+
+[[bin]]
+name = "strategic-expansion"
+path = "src/bin/strategic_expansion.rs"
 
 # Enable all lints for clean code
 [lints.rust]

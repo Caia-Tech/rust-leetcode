@@ -1,0 +1,84 @@
+# GitHub Dependabot configuration
+# Automatically creates pull requests for dependency updates
+
+version: 2
+updates:
+  # Rust dependencies
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "caiaitechmarvin"
+    assignees:
+      - "caiaitechmarvin"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "rust"
+    allow:
+      - dependency-type: "direct"
+        update-type: "version-update:semver-minor"
+      - dependency-type: "direct" 
+        update-type: "version-update:semver-patch"
+      - dependency-type: "indirect"
+        update-type: "version-update:semver-patch"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "serde"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rand"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group criterion updates together
+      criterion:
+        patterns:
+          - "criterion*"
+      # Group testing dependencies
+      testing:
+        patterns:
+          - "proptest"
+          - "rstest"
+      # Group serialization dependencies
+      serialization:
+        patterns:
+          - "serde*"
+          - "chrono"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "caiaitechmarvin"
+    assignees:
+      - "caiaitechmarvin"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    groups:
+      # Group checkout and setup actions
+      setup-actions:
+        patterns:
+          - "actions/checkout"
+          - "dtolnay/rust-toolchain"
+          - "actions/cache"
+      # Group deployment actions
+      deployment-actions:
+        patterns:
+          - "peaceiris/actions-gh-pages"
+          - "codecov/codecov-action"
+          - "benchmark-action/github-action-benchmark"

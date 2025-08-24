@@ -227,9 +227,9 @@ mod tests {
         assert_eq!(nums2, vec![0, 1, 2]);
         
         // Test case 3: Empty array
-        let mut nums3 = vec![];
+        let mut nums3: Vec<i32> = vec![];
         sort_fn(&solution, &mut nums3);
-        assert_eq!(nums3, vec![]);
+        assert_eq!(nums3, Vec::<i32>::new());
         
         // Test case 4: Single element
         let mut nums4 = vec![1];

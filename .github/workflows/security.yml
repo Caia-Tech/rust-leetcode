@@ -1,0 +1,375 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security audit daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  cargo-audit:
+    name: Cargo Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-audit-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+    
+    - name: Run cargo audit
+      run: cargo audit --json > audit-results.json || true
+    
+    - name: Generate audit report
+      run: |
+        echo "# Security Audit Report" > audit-report.md
+        echo "" >> audit-report.md
+        echo "Generated on: $(date)" >> audit-report.md
+        echo "" >> audit-report.md
+        
+        if [ -s audit-results.json ] && jq -e '.vulnerabilities | length > 0' audit-results.json > /dev/null; then
+          echo "## ⚠️ Vulnerabilities Found" >> audit-report.md
+          echo "" >> audit-report.md
+          jq -r '.vulnerabilities[] | "- **\(.advisory.id)**: \(.advisory.title)\n  - Severity: \(.advisory.severity // "Unknown")\n  - Package: \(.advisory.package)\n  - Patched versions: \(.advisory.patched_versions // "N/A")\n  - Description: \(.advisory.description)\n"' audit-results.json >> audit-report.md
+        else
+          echo "## ✅ No Known Vulnerabilities" >> audit-report.md
+          echo "" >> audit-report.md
+          echo "All dependencies are secure and up to date." >> audit-report.md
+        fi
+        
+        echo "" >> audit-report.md
+        echo "## Dependency Information" >> audit-report.md
+        echo "" >> audit-report.md
+        echo "- Total packages scanned: $(jq -r '.database.advisory_count' audit-results.json 2>/dev/null || echo 'Unknown')" >> audit-report.md
+        echo "- Database last updated: $(jq -r '.database.last_commit' audit-results.json 2>/dev/null || echo 'Unknown')" >> audit-report.md
+    
+    - name: Upload audit results
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-audit-results
+        path: |
+          audit-results.json
+          audit-report.md
+    
+    - name: Comment on PR with audit results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const report = fs.readFileSync('audit-report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 🔒 Security Audit Results\n\n${report}`
+            });
+          } catch (error) {
+            console.error('Failed to read audit report:', error);
+          }
+
+  cargo-deny:
+    name: Cargo Deny Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install cargo-deny
+      run: cargo install cargo-deny
+    
+    - name: Create cargo-deny configuration
+      run: |
+        cat > deny.toml << 'EOF'
+        # cargo-deny configuration for enhanced security checks
+        
+        [graph]
+        targets = [
+            { triple = "x86_64-unknown-linux-gnu" },
+            { triple = "x86_64-apple-darwin" },
+            { triple = "x86_64-pc-windows-msvc" },
+        ]
+        
+        [advisories]
+        db-path = "~/.cargo/advisory-db"
+        db-urls = ["https://github.com/rustsec/advisory-db"]
+        vulnerability = "deny"
+        unmaintained = "warn"
+        yanked = "deny"
+        notice = "warn"
+        ignore = []
+        
+        [licenses]
+        unlicensed = "deny"
+        allow = [
+            "MIT",
+            "Apache-2.0",
+            "Apache-2.0 WITH LLVM-exception",
+            "BSD-2-Clause",
+            "BSD-3-Clause",
+            "ISC",
+            "Unicode-DFS-2016",
+        ]
+        deny = [
+            "GPL-2.0",
+            "GPL-3.0",
+            "AGPL-1.0",
+            "AGPL-3.0",
+            "LGPL-2.0",
+            "LGPL-2.1",
+            "LGPL-3.0",
+        ]
+        copyleft = "warn"
+        allow-osi-fsf-free = "neither"
+        default = "deny"
+        confidence-threshold = 0.8
+        
+        [bans]
+        multiple-versions = "warn"
+        wildcards = "allow"
+        highlight = "all"
+        workspace-default-features = "allow"
+        external-default-features = "allow"
+        skip = []
+        skip-tree = []
+        
+        [sources]
+        unknown-registry = "warn"
+        unknown-git = "warn"
+        allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+        allow-git = []
+        EOF
+    
+    - name: Run cargo deny check
+      run: |
+        cargo deny check --hide-inclusion-graph 2>&1 | tee deny-report.txt || true
+    
+    - name: Upload deny results
+      uses: actions/upload-artifact@v3
+      with:
+        name: cargo-deny-results
+        path: deny-report.txt
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v3
+      with:
+        fail-on-severity: moderate
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
+        deny-licenses: GPL-2.0, GPL-3.0, AGPL-1.0, AGPL-3.0
+
+  rust-clippy:
+    name: Rust Security Lints
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Run security-focused clippy lints
+      run: |
+        cargo clippy --all-targets --all-features -- \
+          -D clippy::cast_ptr_alignment \
+          -D clippy::char_lit_as_u8 \
+          -D clippy::checked_conversions \
+          -D clippy::fn_to_numeric_cast_with_truncation \
+          -D clippy::integer_overflow \
+          -D clippy::invalid_upcast_comparisons \
+          -D clippy::lossy_float_literal \
+          -D clippy::mem_forget \
+          -D clippy::panic \
+          -D clippy::panic_in_result_fn \
+          -D clippy::print_stdout \
+          -D clippy::unwrap_used \
+          -D clippy::use_debug \
+          -W clippy::cast_lossless \
+          -W clippy::cast_possible_truncation \
+          -W clippy::cast_possible_wrap \
+          -W clippy::cast_precision_loss \
+          -W clippy::cast_sign_loss \
+          -W clippy::float_cmp_const \
+          -W clippy::indexing_slicing \
+          -W clippy::integer_division \
+          -W clippy::shadow_reuse \
+          -W clippy::shadow_same \
+          -W clippy::shadow_unrelated
+
+  semgrep:
+    name: Static Analysis with Semgrep
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Semgrep
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/secrets
+          p/rust
+        publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+        publishDeployment: ${{ github.repository }}
+        generateSarif: "1"
+    
+    - name: Upload SARIF file
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: semgrep.sarif
+      if: always()
+
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Run TruffleHog OSS
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+        extra_args: --debug --only-verified
+
+  supply-chain:
+    name: Supply Chain Security
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Generate Software Bill of Materials (SBOM)
+      run: |
+        cargo install cargo-cyclonedx
+        cargo cyclonedx --format json --output-pattern sbom.json
+    
+    - name: Upload SBOM
+      uses: actions/upload-artifact@v3
+      with:
+        name: software-bill-of-materials
+        path: sbom.json
+    
+    - name: Verify build reproducibility
+      run: |
+        echo "Building twice to verify reproducibility..."
+        cargo clean
+        cargo build --release
+        sha256sum target/release/rust-leetcode > build1.sha256 || echo "Binary not found"
+        
+        cargo clean  
+        cargo build --release
+        sha256sum target/release/rust-leetcode > build2.sha256 || echo "Binary not found"
+        
+        if [ -f build1.sha256 ] && [ -f build2.sha256 ]; then
+          if diff build1.sha256 build2.sha256; then
+            echo "✅ Build is reproducible"
+          else
+            echo "⚠️ Build is not reproducible"
+            echo "Build 1: $(cat build1.sha256)"
+            echo "Build 2: $(cat build2.sha256)"
+          fi
+        else
+          echo "ℹ️ Reproducibility test skipped (no binary produced)"
+        fi
+
+  security-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs: [cargo-audit, cargo-deny, rust-clippy]
+    if: always()
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Generate comprehensive security report
+      run: |
+        echo "# Comprehensive Security Report" > SECURITY_REPORT.md
+        echo "" >> SECURITY_REPORT.md
+        echo "Generated on: $(date)" >> SECURITY_REPORT.md
+        echo "Repository: ${{ github.repository }}" >> SECURITY_REPORT.md
+        echo "Commit: ${{ github.sha }}" >> SECURITY_REPORT.md
+        echo "" >> SECURITY_REPORT.md
+        
+        echo "## Summary" >> SECURITY_REPORT.md
+        echo "" >> SECURITY_REPORT.md
+        echo "This report consolidates security findings from multiple tools:" >> SECURITY_REPORT.md
+        echo "- Cargo Audit (vulnerability scanning)" >> SECURITY_REPORT.md
+        echo "- Cargo Deny (policy enforcement)" >> SECURITY_REPORT.md
+        echo "- Clippy Security Lints (code analysis)" >> SECURITY_REPORT.md
+        echo "- Semgrep (static analysis)" >> SECURITY_REPORT.md
+        echo "- TruffleHog (secret detection)" >> SECURITY_REPORT.md
+        echo "" >> SECURITY_REPORT.md
+        
+        # Include audit report if available
+        if [ -f security-audit-results/audit-report.md ]; then
+          echo "## Vulnerability Scan Results" >> SECURITY_REPORT.md
+          echo "" >> SECURITY_REPORT.md
+          cat security-audit-results/audit-report.md >> SECURITY_REPORT.md
+          echo "" >> SECURITY_REPORT.md
+        fi
+        
+        # Include deny report if available  
+        if [ -f cargo-deny-results/deny-report.txt ]; then
+          echo "## Policy Enforcement Results" >> SECURITY_REPORT.md
+          echo "" >> SECURITY_REPORT.md
+          echo "\`\`\`" >> SECURITY_REPORT.md
+          cat cargo-deny-results/deny-report.txt >> SECURITY_REPORT.md
+          echo "\`\`\`" >> SECURITY_REPORT.md
+          echo "" >> SECURITY_REPORT.md
+        fi
+        
+        echo "## Recommendations" >> SECURITY_REPORT.md
+        echo "" >> SECURITY_REPORT.md
+        echo "1. Keep dependencies updated regularly" >> SECURITY_REPORT.md
+        echo "2. Monitor security advisories for Rust ecosystem" >> SECURITY_REPORT.md
+        echo "3. Use \`cargo audit\` in local development" >> SECURITY_REPORT.md
+        echo "4. Review dependency licenses for compliance" >> SECURITY_REPORT.md
+        echo "5. Enable Dependabot for automatic updates" >> SECURITY_REPORT.md
+    
+    - name: Upload security report
+      uses: actions/upload-artifact@v3
+      with:
+        name: comprehensive-security-report
+        path: SECURITY_REPORT.md

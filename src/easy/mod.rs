@@ -17,6 +17,5 @@ pub mod maximum_depth_of_binary_tree;
 pub mod invert_binary_tree;
 pub mod subtree_of_another_tree;
 pub mod house_robber;
-// pub mod remove_element;
-// pub mod implement_strstr;
-// pub mod search_insert_position;
+pub mod valid_palindrome_ii;
+pub mod move_zeroes;

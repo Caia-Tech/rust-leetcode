@@ -507,10 +507,11 @@ mod tests {
         
         // Test that Morris traversal works correctly
         // For BST [3,1,4,null,2], inorder is [1,2,3,4]
+        // Note: Morris traversal modifies the tree temporarily, so we need fresh trees for each test
         assert_eq!(solution.kth_smallest_morris(root.clone(), 1), 1);
-        assert_eq!(solution.kth_smallest_morris(root.clone(), 2), 2);
-        assert_eq!(solution.kth_smallest_morris(root.clone(), 3), 3);
-        assert_eq!(solution.kth_smallest_morris(root, 4), 4);
+        assert_eq!(solution.kth_smallest_morris(build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]), 2), 2);
+        assert_eq!(solution.kth_smallest_morris(build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]), 3), 3);
+        assert_eq!(solution.kth_smallest_morris(build_tree(vec![Some(3), Some(1), Some(4), None, Some(2)]), 4), 4);
     }
     
     #[test]
